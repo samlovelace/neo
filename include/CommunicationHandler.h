@@ -1,6 +1,7 @@
 #ifndef COMMUNICATIONHANDLER_H
 #define COMMUNICATIONHANDLER_H
  
+#include <vector> 
 
 class CommunicationHandler 
 { 
@@ -10,7 +11,7 @@ public:
 
     bool init(); 
 
-    bool commandVehicle();
+    bool commandVehicle(const std::vector<double>& aVehiclePos_gl);
 
 private:
    
