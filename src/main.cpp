@@ -10,28 +10,40 @@ int main()
 {   
     BT::BehaviorTreeFactory factory; 
 
+    // auto tree = factory.createTreeFromText(R"(
+    //     <root BTCPP_format="4">
+    //         <BehaviorTree ID="Main">
+    //             <Fallback>
+    //                 <CheckObjectKnown object_type="bottle"/>
+    //             <Sequence>
+    //                 <SendFindObject object_type={object_type}/>
+    //                 <Fallback>
+    //                     <PollObjectFound object_type={object_type} timeout_s="60"/>
+    //                     <Parallel>
+    //                         <PollObjectFound object_type={object_type} timeout_s="30000"/>    
+    //                         <Sequence> 
+    //                             <ComputeNextWaypoint>
+    //                             <SendVehicleWaypoint>
+    //                             <WaitForVehicleArrival>
+    //                         </Sequence> 
+    //                     </Parallel>
+    //                 </Fallback>
+    //             </Sequence>
+    //         </BehaviorTree> 
+    //     </root>
+    // )");
+
     auto tree = factory.createTreeFromText(R"(
         <root BTCPP_format="4">
-            <BehaviorTree ID="Main">
-                <Fallback>
-                    <CheckObjectKnown object_type="bottle"/>
+            <BehaviorTree ID="VehicleScan">
                 <Sequence>
-                    <SendFindObject object_type={object_type}/>
-                    <Fallback>
-                        <PollObjectFound object_type={object_type} timeout_s="60"/>
-                        <Parallel>
-                            <PollObjectFound object_type={object_type} timeout_s="30000"/>    
-                            <Sequence> 
-                                <ComputeNextWaypoint>
-                                <SendVehicleWaypoint>
-                                <WaitForVehicleArrival>
-                            </Sequence> 
-                        </Parallel>
-                    </Fallback>
-                </Sequence>
-            </BehaviorTree> 
+                    <GetNextScanWaypoint pattern="pirouette" goal_pose={goal_pose}/>
+                    <SendVehicleWaypointNode goal_pose={goal_pose}/>
+                    <PollVehicleArrivalNode/>
+                </Sequence> 
+            </BehaviorTree>
         </root>
-    )");
+    )"); 
 
     // initialize the object registry on the blackboard 
     auto registry = std::make_shared<ObjectRegistry>(); 

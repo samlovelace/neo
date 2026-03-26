@@ -5,8 +5,9 @@
 
 #include "behaviortree_cpp/action_node.h"
 
-#include "VehicleInterface.h"
 #include "CommonTypes.hpp"
+#include "VehicleInterface.h"
+#include "ScanPatternGenerator.h"
 
 class SendVehicleWaypointNode : public BT::SyncActionNode
 {
@@ -80,6 +81,40 @@ public:
 private:
     std::shared_ptr<VehicleInterface> mInterface; 
 
+};
+
+class GetNextScanWaypointNode : public BT::SyncActionNode
+{
+public:
+    static BT::PortsList providedPorts()
+    {
+        return {
+            BT::InputPort<std::string>("pattern"),
+            BT::OutputPort<std::shared_ptr<Pose6D>>("goal_pose")
+        };
+    }
+
+    BT::NodeStatus tick() override
+    {
+        // Generate pattern on first call
+        if (!mScanPattern)
+        {
+            auto pattern      = getInput<std::string>("pattern").value();
+            auto current_pose = mInterface->currentPose();
+            mScanPattern      = std::make_unique<ScanPatternGenerator>(pattern, current_pose);
+        }
+
+        if (!mScanPattern->hasMoreWaypoints())
+            return BT::NodeStatus::FAILURE;
+
+        auto pose = std::make_shared<Pose6D>(mScanPattern->nextWaypoint());
+        setOutput("goal_pose", pose);
+        return BT::NodeStatus::SUCCESS;
+    }
+
+private:
+    std::shared_ptr<VehicleInterface>       mInterface;
+    std::unique_ptr<ScanPatternGenerator>   mScanPattern;
 };
 
 #endif
