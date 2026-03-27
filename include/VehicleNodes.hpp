@@ -2,7 +2,9 @@
 #define VEHICLENODES_HPP
 
 #include <memory> 
+#include <iostream> 
 
+#include "behaviortree_cpp/bt_factory.h"
 #include "behaviortree_cpp/action_node.h"
 
 #include "CommonTypes.hpp"
@@ -34,6 +36,7 @@ public:
             return BT::NodeStatus::FAILURE; 
         }
 
+        std::cout << "Sending waypoint to mobile base..." << std::endl; 
         mInterface->send(*goalPose.value());
         return BT::NodeStatus::SUCCESS;
     }
@@ -45,7 +48,7 @@ private:
 /**
  * @brief PollVehicleArrivalNode
  */
-class PollVehicleArrivalNode : BT::StatefulActionNode
+class PollVehicleArrivalNode : public BT::StatefulActionNode
 {
 public:
     PollVehicleArrivalNode(const std::string&      name,
@@ -54,22 +57,27 @@ public:
         : StatefulActionNode(name, config)
         , mInterface(aVehInterface) {} 
 
-    ~PollVehicleArrivalNode();
+    ~PollVehicleArrivalNode() = default; 
 
     BT::NodeStatus onStart() override
     {
-        // Init timeout counter 
+        // Init timeout counter
+        std::cout << "starting vehicle arrival check...";  
+        return BT::NodeStatus::RUNNING; 
     }
 
     BT::NodeStatus onRunning() override
     {
         // TODO: add timeout and return failure if timeout reached 
+        std::cout << "polling vehicle arrival state..." << std::endl; 
 
         if(mInterface->isArrived())
         {
+            std::cout << "vehicle is arrived..." << std::endl; 
             return BT::NodeStatus::SUCCESS; 
         }
 
+        std::cout << "vehicle is still moving..." << std::endl; 
         return BT::NodeStatus::RUNNING; 
     }
 
@@ -86,6 +94,12 @@ private:
 class GetNextScanWaypointNode : public BT::SyncActionNode
 {
 public:
+    GetNextScanWaypointNode(const std::string&        name,
+                            const BT::NodeConfig&     config,
+                            std::shared_ptr<VehicleInterface> vehicle_interface)
+        : SyncActionNode(name, config)
+        , mInterface(vehicle_interface) {}
+
     static BT::PortsList providedPorts()
     {
         return {
@@ -96,12 +110,13 @@ public:
 
     BT::NodeStatus tick() override
     {
-        // Generate pattern on first call
         if (!mScanPattern)
         {
             auto pattern      = getInput<std::string>("pattern").value();
+            std::cout << "Generating " << pattern << " scan pattern" << std::endl; 
+
             auto current_pose = mInterface->currentPose();
-            mScanPattern      = std::make_unique<ScanPatternGenerator>(pattern, current_pose);
+            mScanPattern      = ScanPatternGenerator::generate(pattern, current_pose);
         }
 
         if (!mScanPattern->hasMoreWaypoints())
@@ -109,12 +124,13 @@ public:
 
         auto pose = std::make_shared<Pose6D>(mScanPattern->nextWaypoint());
         setOutput("goal_pose", pose);
+        std::cout << "sending next waypoint..." << std::endl; 
         return BT::NodeStatus::SUCCESS;
     }
 
 private:
-    std::shared_ptr<VehicleInterface>       mInterface;
-    std::unique_ptr<ScanPatternGenerator>   mScanPattern;
+    std::shared_ptr<VehicleInterface> mInterface;
+    std::unique_ptr<ScanPattern>      mScanPattern;
 };
 
 #endif

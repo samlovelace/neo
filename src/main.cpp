@@ -1,45 +1,39 @@
 
 #include <iostream> 
 
+#include <rclcpp/rclcpp.hpp>
 #include "behaviortree_cpp/behavior_tree.h"
 #include "behaviortree_cpp/bt_factory.h"
 
+#include "RosTopicManager.hpp"
 #include "ObjectData.hpp"
+#include "VehicleInterface.h"
+
+#include "NodeRegistration.hpp"
 
 int main()
 {   
+    rclcpp::init(0, nullptr); 
+    RosTopicManager::getInstance()->spinNode(); 
+
+    auto veh = std::make_shared<VehicleInterface>();
+    while(!veh->isConnected())
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(250)); 
+    }
+
     BT::BehaviorTreeFactory factory; 
 
-    // auto tree = factory.createTreeFromText(R"(
-    //     <root BTCPP_format="4">
-    //         <BehaviorTree ID="Main">
-    //             <Fallback>
-    //                 <CheckObjectKnown object_type="bottle"/>
-    //             <Sequence>
-    //                 <SendFindObject object_type={object_type}/>
-    //                 <Fallback>
-    //                     <PollObjectFound object_type={object_type} timeout_s="60"/>
-    //                     <Parallel>
-    //                         <PollObjectFound object_type={object_type} timeout_s="30000"/>    
-    //                         <Sequence> 
-    //                             <ComputeNextWaypoint>
-    //                             <SendVehicleWaypoint>
-    //                             <WaitForVehicleArrival>
-    //                         </Sequence> 
-    //                     </Parallel>
-    //                 </Fallback>
-    //             </Sequence>
-    //         </BehaviorTree> 
-    //     </root>
-    // )");
+    // register nodes before reading xml tree 
+    registerVehicleNodes(factory, veh); 
 
     auto tree = factory.createTreeFromText(R"(
         <root BTCPP_format="4">
             <BehaviorTree ID="VehicleScan">
                 <Sequence>
-                    <GetNextScanWaypoint pattern="pirouette" goal_pose={goal_pose}/>
-                    <SendVehicleWaypointNode goal_pose={goal_pose}/>
-                    <PollVehicleArrivalNode/>
+                    <GetNextScanWaypoint pattern="pirouette" goal_pose="{goal_pose}"/>
+                    <SendVehicleWaypoint goal_pose="{goal_pose}"/>
+                    <PollVehicleArrival/>
                 </Sequence> 
             </BehaviorTree>
         </root>
@@ -60,8 +54,10 @@ int main()
             break; 
         }
     
-        std::this_thread::sleep_for(std::chrono::milliseconds(500)); 
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 
+
+    rclcpp::shutdown(); 
     return 0; 
 }
