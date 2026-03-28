@@ -11,13 +11,13 @@
 #include "VehicleInterface.h"
 #include "ScanPatternGenerator.h"
 
-class SendVehicleWaypointNode : public BT::SyncActionNode
+class SendVehicleWaypointNode : public BT::StatefulActionNode
 {
 public:
     SendVehicleWaypointNode(const std::string&      name,
                             const BT::NodeConfig&   config,
                             std::shared_ptr<VehicleInterface> aVehInterface)
-        : SyncActionNode(name, config)
+        : StatefulActionNode(name, config)
         , mInterface(aVehInterface) {}
 
     static BT::PortsList providedPorts()
@@ -27,7 +27,7 @@ public:
         };
     }
 
-    BT::NodeStatus tick() override
+    BT::NodeStatus onStart() override 
     {
         auto goalPose = getInput<std::shared_ptr<Pose6D>>("goal_pose");
 
@@ -38,7 +38,23 @@ public:
 
         std::cout << "Sending waypoint to mobile base..." << std::endl; 
         mInterface->send(*goalPose.value());
+        return BT::NodeStatus::RUNNING; 
+    }
+
+    BT::NodeStatus onRunning() override
+    {
+        if(mInterface->isArrived())
+        {
+            std::cout << "Waiting for vehicle ack..." << std::endl; 
+            return BT::NodeStatus::RUNNING; 
+        }
+
         return BT::NodeStatus::SUCCESS;
+    }
+
+    void onHalted() override
+    {
+
     }
 
 private:
@@ -62,22 +78,21 @@ public:
     BT::NodeStatus onStart() override
     {
         // Init timeout counter
-        std::cout << "starting vehicle arrival check...";  
+        std::cout << "starting vehicle arrival check..." << std::endl;  
         return BT::NodeStatus::RUNNING; 
     }
 
     BT::NodeStatus onRunning() override
     {
         // TODO: add timeout and return failure if timeout reached 
-        std::cout << "polling vehicle arrival state..." << std::endl; 
+        //std::cout << "polling vehicle arrival state..." << std::endl; 
 
         if(mInterface->isArrived())
         {
             std::cout << "vehicle is arrived..." << std::endl; 
             return BT::NodeStatus::SUCCESS; 
         }
-
-        std::cout << "vehicle is still moving..." << std::endl; 
+ 
         return BT::NodeStatus::RUNNING; 
     }
 

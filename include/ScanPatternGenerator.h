@@ -57,7 +57,7 @@ public:
             // From current pose, compute 10 waypoints to rotate 360deg at current position 
 
             int numWaypoints = 10; 
-            double angleDelta = (2 * M_PI) / numWaypoints; 
+            double angleDelta = (2 * M_PI) / (double)numWaypoints; 
 
             // scan pattern position stays constant 
             Pose6D wp; 
@@ -65,21 +65,35 @@ public:
             wp.y = aCurrentPose.y; 
             wp.z = aCurrentPose.z; 
 
-            Eigen::Quaterniond start(aCurrentPose.qw, aCurrentPose.qx, aCurrentPose.qy, aCurrentPose.qz);
-            Eigen::Quaterniond next; 
+            std::cout << "Starting scan pattern from " << wp.x << "," << wp.y << "," << wp.z << std::endl; 
+        
+            // Build starting transform
+            Eigen::Affine3d T_start = Eigen::Affine3d::Identity();
+            T_start.translation() << aCurrentPose.x, aCurrentPose.y, aCurrentPose.z;
+            T_start.linear() = Eigen::Quaterniond(
+                aCurrentPose.qw, aCurrentPose.qx, aCurrentPose.qy, aCurrentPose.qz
+            ).toRotationMatrix();
 
-            for(int i = 0; i < numWaypoints; i++)
+            std::cout << "Starting orientation (rpy): " << T_start.linear().eulerAngles(0, 1, 2).transpose() << std::endl; 
+
+            for (int i = 0; i < numWaypoints; i++)
             {
-                // apply rotation of some amount to starting quaternion 
-                Eigen::AngleAxisd increment(angleDelta * i, Eigen::Vector3d::UnitZ()); 
-                next = start * increment; 
+                // Build world-frame Z rotation
+                Eigen::Affine3d T_rot = Eigen::Affine3d::Identity();
+                T_rot.linear() = Eigen::AngleAxisd(angleDelta * i, Eigen::Vector3d::UnitZ())
+                                    .toRotationMatrix();
 
-                wp.qx = next.x(); 
-                wp.qy = next.y(); 
-                wp.qz = next.z(); 
-                wp.qw = next.w(); 
+                // Left-multiply = world frame rotation
+                Eigen::Affine3d T_wp = T_rot * T_start;
 
-                waypoints.push(wp); 
+                // Extract back to Pose6D
+                Eigen::Quaterniond q(T_wp.linear());
+
+                wp.qx = q.x();
+                wp.qy = q.y();
+                wp.qz = q.z();
+                wp.qw = q.w();
+                waypoints.push(wp);
             }
         } 
         else
@@ -88,6 +102,7 @@ public:
             return nullptr; 
         }
 
+        std::cout << "Generated scan pattern with " << waypoints.size() << " waypoints" << std::endl; 
         auto pattern = std::make_unique<ScanPattern>(waypoints); 
         return pattern; 
     }

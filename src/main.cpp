@@ -30,11 +30,13 @@ int main()
     auto tree = factory.createTreeFromText(R"(
         <root BTCPP_format="4">
             <BehaviorTree ID="VehicleScan">
-                <Sequence>
-                    <GetNextScanWaypoint pattern="pirouette" goal_pose="{goal_pose}"/>
-                    <SendVehicleWaypoint goal_pose="{goal_pose}"/>
-                    <PollVehicleArrival/>
-                </Sequence> 
+                <KeepRunningUntilFailure>
+                    <Sequence>
+                        <GetNextScanWaypoint pattern="pirouette" goal_pose="{goal_pose}"/>
+                        <SendVehicleWaypoint goal_pose="{goal_pose}"/>
+                        <PollVehicleArrival/>
+                    </Sequence> 
+                </KeepRunningUntilFailure>
             </BehaviorTree>
         </root>
     )"); 

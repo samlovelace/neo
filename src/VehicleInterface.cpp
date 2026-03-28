@@ -2,6 +2,7 @@
 #include "VehicleInterface.h"
 #include "robot_idl/msg/vehicle_waypoint.hpp"
 #include "RosTopicManager.hpp"
+#include <eigen3/Eigen/Dense>
 
 VehicleInterface::VehicleInterface()
 {
@@ -23,16 +24,24 @@ void VehicleInterface::send(const Pose6D& aGoalPose)
 {
     robot_idl::msg::VehicleWaypoint wp; 
     wp.position.set__x(aGoalPose.x); 
-    wp.position.set__y(aGoalPose.x); 
-    wp.position.set__z(aGoalPose.x); 
-
-    // TODO: compute euler from quat 
+    wp.position.set__y(aGoalPose.y); 
+    wp.position.set__z(aGoalPose.z); 
 
     wp.quat.set__x(aGoalPose.qx);
     wp.quat.set__y(aGoalPose.qy);
     wp.quat.set__z(aGoalPose.qz);
     wp.quat.set__w(aGoalPose.qw);
+
+    // compute euler from quat 
+    Eigen::Quaterniond q(aGoalPose.qw, aGoalPose.qx, aGoalPose.qy, aGoalPose.qz); 
+    Eigen::Vector3d euler = q.toRotationMatrix().eulerAngles(0, 1, 2); 
+
+    std::cout << "Goal orientation " << euler.transpose() << std::endl; 
     
+    wp.euler.set__yaw(euler(2)); 
+    wp.euler.set__pitch(euler(1)); 
+    wp.euler.set__roll(euler(0)); 
+
     RosTopicManager::getInstance()->publishMessage("robot/vehicle/waypoint", wp); 
 }
 
