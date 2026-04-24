@@ -9,13 +9,14 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(robot_idl REQUIRED)
+find_package(behaviortree_cpp REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 set(SOURCES 
-	src/ActionRegistry.cpp
-	src/CommunicationHandler.cpp
+	src/PerceptionInterface.cpp
 	src/main.cpp
-	src/ExecutionEngine.cpp
-	src/FindObjectExecutor.cpp
+	src/VehicleInterface.cpp
+
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES})
@@ -28,6 +29,8 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 ament_target_dependencies(${PROJECT_NAME} 
 	rclcpp
 	robot_idl	
+	behaviortree_cpp
+	Eigen3
 )
 
 install(TARGETS ${PROJECT_NAME} DESTINATION lib/${PROJECT_NAME})
