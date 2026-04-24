@@ -52,50 +52,44 @@ public:
         // based on the type, instantiate ScanPattern with certain function binding
         if("pirouette" == aType)
         {
-            // compute the pirouette scan pattern and give vector of waypoints to ScanPattern
-            // Probably want to make this configurable at some point but thats a future somebody problem
-            // From current pose, compute 10 waypoints to rotate 360deg at current position 
+            int numWaypoints = 10;
+            double angleDelta = (2.0 * M_PI) / (double)numWaypoints;
 
-            int numWaypoints = 10; 
-            double angleDelta = (2 * M_PI) / (double)numWaypoints; 
+            Pose6D wp;
+            wp.x = aCurrentPose.x;
+            wp.y = aCurrentPose.y;
+            wp.z = aCurrentPose.z;
 
-            // scan pattern position stays constant 
-            Pose6D wp; 
-            wp.x = aCurrentPose.x; 
-            wp.y = aCurrentPose.y; 
-            wp.z = aCurrentPose.z; 
-
-            std::cout << "Starting scan pattern from " << wp.x << "," << wp.y << "," << wp.z << std::endl; 
-        
-            // Build starting transform
-            Eigen::Affine3d T_start = Eigen::Affine3d::Identity();
-            T_start.translation() << aCurrentPose.x, aCurrentPose.y, aCurrentPose.z;
-            T_start.linear() = Eigen::Quaterniond(
+            // Extract starting yaw from current pose
+            Eigen::Quaterniond q_start(
                 aCurrentPose.qw, aCurrentPose.qx, aCurrentPose.qy, aCurrentPose.qz
-            ).toRotationMatrix();
+            );
+            Eigen::Vector3d rpy_start = q_start.toRotationMatrix().eulerAngles(0, 1, 2);
+            double roll_start  = rpy_start[0];
+            double pitch_start = rpy_start[1];
+            double yaw_start   = rpy_start[2];
 
-            std::cout << "Starting orientation (rpy): " << T_start.linear().eulerAngles(0, 1, 2).transpose() << std::endl; 
+            std::cout << "Starting yaw: " << yaw_start << " rad" << std::endl;
 
             for (int i = 0; i < numWaypoints; i++)
             {
-                // Build world-frame Z rotation
-                Eigen::Affine3d T_rot = Eigen::Affine3d::Identity();
-                T_rot.linear() = Eigen::AngleAxisd(angleDelta * i, Eigen::Vector3d::UnitZ())
-                                    .toRotationMatrix();
+                // Accumulate yaw from start, wrapping smoothly with remainder
+                double yaw = std::remainder(yaw_start + angleDelta * i, 2.0 * M_PI);
 
-                // Left-multiply = world frame rotation
-                Eigen::Affine3d T_wp = T_rot * T_start;
+                // Rebuild quaternion preserving original roll/pitch
+                Eigen::Quaterniond q_wp =
+                    Eigen::AngleAxisd(roll_start,  Eigen::Vector3d::UnitX()) *
+                    Eigen::AngleAxisd(pitch_start, Eigen::Vector3d::UnitY()) *
+                    Eigen::AngleAxisd(yaw,         Eigen::Vector3d::UnitZ());
 
-                // Extract back to Pose6D
-                Eigen::Quaterniond q(T_wp.linear());
+                wp.qx = q_wp.x();
+                wp.qy = q_wp.y();
+                wp.qz = q_wp.z();
+                wp.qw = q_wp.w();
 
-                wp.qx = q.x();
-                wp.qy = q.y();
-                wp.qz = q.z();
-                wp.qw = q.w();
                 waypoints.push(wp);
             }
-        } 
+        }
         else
         {
             std::cout << "Unsupported scan pattern type!!!!! " << std::endl; 

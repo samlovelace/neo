@@ -8,7 +8,7 @@
 
 struct ObjectData
 {
-    const std::string mId; // e.g cat001, soda_can001
+    std::string mId; // e.g cat001, soda_can001
     Pose6D mPose;
 };
 

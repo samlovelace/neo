@@ -13,8 +13,10 @@ find_package(behaviortree_cpp REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 set(SOURCES 
+	src/PerceptionInterface.cpp
 	src/main.cpp
 	src/VehicleInterface.cpp
+
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES})
