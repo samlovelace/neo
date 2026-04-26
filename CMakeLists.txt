@@ -16,7 +16,6 @@ set(SOURCES
 	src/PerceptionInterface.cpp
 	src/main.cpp
 	src/VehicleInterface.cpp
-
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES})

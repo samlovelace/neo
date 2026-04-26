@@ -43,6 +43,7 @@ void PerceptionInterface::responseCallback(robot_idl::msg::FoundObjectResponse::
     pose.y = aResponse->obj_centroid_g.point.y;
     pose.z = aResponse->obj_centroid_g.point.z; 
     
+    // TODO: this might be populated in the response depending on the object type 
     pose.qw = 1; 
     pose.qx = 0; 
     pose.qy = 0; 

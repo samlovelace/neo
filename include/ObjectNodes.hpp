@@ -116,18 +116,14 @@ public:
                 // TODO: be more selective about pushing data to the registry, check for duplicates etc. 
                 auto registry = config().blackboard->get<std::shared_ptr<ObjectRegistry>>("object_registry"); 
                 registry->push_back(obj); 
-                std::cout << "Added " << obj.mId << " to the registry!"; 
+                std::cout << "Added object of type '" << obj.mId << "' to the registry!\n"; 
 
                 if(mObjectIdToFind == obj.mId)
                 {
-                    std::cout << "Target object " << obj.mId << " has been found!\n"; 
+                    std::cout << "Target object '" << obj.mId << "' has been found!\n";       
                     mTargetFound = true; 
                 }
             }
-        }
-        else 
-        {
-            std::cout << "No objects found yet...\n";
         }
 
         return mTargetFound ? BT::NodeStatus::SUCCESS : BT::NodeStatus::RUNNING; 
