@@ -13,7 +13,7 @@ public:
     VehicleInterface();
     ~VehicleInterface();
 
-    void send(const Pose6D& aGoalPose);
+    void send(const Waypoint& aGoalPose);
     bool isArrived(); 
     Pose6D currentPose(); 
     bool isConnected(); 

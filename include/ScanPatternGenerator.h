@@ -15,7 +15,7 @@
 class ScanPattern 
 { 
 public:
-    ScanPattern(const std::queue<Pose6D>& aScanPattern) 
+    ScanPattern(const std::queue<Waypoint>& aScanPattern) 
         : mWaypoints(aScanPattern) {}
     ~ScanPattern() = default; 
 
@@ -24,20 +24,20 @@ public:
         return !mWaypoints.empty(); 
     }
 
-    Pose6D nextWaypoint()
+    Waypoint nextWaypoint()
     {
         if(!hasMoreWaypoints())
         {
-            return Pose6D{}; 
+            return Waypoint{}; 
         }
 
-        Pose6D wp = mWaypoints.front(); 
+        Waypoint wp = mWaypoints.front(); 
         mWaypoints.pop(); 
         return wp; 
     }
 
 private: 
-    std::queue<Pose6D> mWaypoints; 
+    std::queue<Waypoint> mWaypoints; 
 };
 
 class ScanPatternGenerator
@@ -46,10 +46,15 @@ public:
 
     static std::unique_ptr<ScanPattern> generate(const std::string& aType, const Pose6D& aCurrentPose)
     {
-        std::queue<Pose6D> waypoints;
-        waypoints.push(aCurrentPose); // first waypoint is always the current pose
+        // TODO: get this from config when implemented 
+        std::array<double, 6> tolerance = {0.3, 0.3, 0.3, 5, 5, 5}; //arrival tolerance (xyz rpy): (m, m, m, deg, deg, deg); 
 
-        // based on the type, instantiate ScanPattern with certain function binding
+        std::queue<Waypoint> waypoints;
+        Waypoint start; 
+        start.goal = aCurrentPose; 
+        start.tolerance = tolerance; 
+        waypoints.push(start);          // first waypoint is always the current pose
+
         if("pirouette" == aType)
         {
             int numWaypoints = 10;
@@ -87,7 +92,10 @@ public:
                 wp.qz = q_wp.z();
                 wp.qw = q_wp.w();
 
-                waypoints.push(wp);
+                Waypoint actual; 
+                actual.goal = wp; 
+                actual.tolerance = tolerance; 
+                waypoints.push(actual);
             }
         }
         else

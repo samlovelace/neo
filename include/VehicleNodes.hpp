@@ -23,13 +23,13 @@ public:
     static BT::PortsList providedPorts()
     {
         return {
-            BT::InputPort<std::shared_ptr<Pose6D>>("goal_pose")
+            BT::InputPort<std::shared_ptr<Waypoint>>("goal_pose")
         };
     }
 
     BT::NodeStatus onStart() override 
     {
-        auto goalPose = getInput<std::shared_ptr<Pose6D>>("goal_pose");
+        auto goalPose = getInput<std::shared_ptr<Waypoint>>("goal_pose");
 
         if(!goalPose)
         {
@@ -119,7 +119,7 @@ public:
     {
         return {
             BT::InputPort<std::string>("pattern"),
-            BT::OutputPort<std::shared_ptr<Pose6D>>("goal_pose")
+            BT::OutputPort<std::shared_ptr<Waypoint>>("goal_pose")
         };
     }
 
@@ -137,7 +137,7 @@ public:
         if (!mScanPattern->hasMoreWaypoints())
             return BT::NodeStatus::FAILURE;
 
-        auto pose = std::make_shared<Pose6D>(mScanPattern->nextWaypoint());
+        auto pose = std::make_shared<Waypoint>(mScanPattern->nextWaypoint());
         setOutput("goal_pose", pose);
         std::cout << "sending next waypoint..." << std::endl; 
         return BT::NodeStatus::SUCCESS;
