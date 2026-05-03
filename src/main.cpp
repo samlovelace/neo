@@ -33,6 +33,7 @@ int main()
 
     // register object/perception nodes
     factory.registerNodeType<CheckObjectKnownNode>("CheckObjectKnown");
+    factory.registerNodeType<PlanObjectApproachNode>("PlanObjectApproach"); 
     registerPerceptionNodes(factory, percep); 
 
     auto tree = factory.createTreeFromText(R"(
@@ -44,8 +45,9 @@ int main()
                         <SendFindObject object_id="{object_id}"/>
                         <Parallel success_count="1" failure_count="2">
                             <PollFoundObject object_id="{object_id}"/>
-                            <SubTree ID="VehicleScan" pattern="{scan_pattern}"/>
+                            <SubTree ID="VehicleScan"/>
                         </Parallel>
+                        <SubTree ID="ApproachObject" object_id="{object_id}" _autoremap="true"/>
                     </Sequence>
                 </Fallback>
             </BehaviorTree>
@@ -59,6 +61,14 @@ int main()
                     </Sequence>
                 </KeepRunningUntilFailure>
             </BehaviorTree>
+
+            <BehaviorTree ID="ApproachObject">
+                <Sequence>
+                    <PlanObjectApproach object_id="{object_id}" goal_pose="{goal_pose}"/>
+                    <SendVehicleWaypoint goal_pose="{goal_pose}"/>
+                    <PollVehicleArrival/>
+                </Sequence>
+            </BehaviorTree> 
 
         </root>
             )"); 

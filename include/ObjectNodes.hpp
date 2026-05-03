@@ -4,6 +4,8 @@
 #include <behaviortree_cpp/condition_node.h>
 #include <behaviortree_cpp/action_node.h>
 
+#include <eigen3/Eigen/Dense>
+
 #include "ObjectData.hpp"
 #include "PerceptionInterface.h"
 
@@ -116,11 +118,12 @@ public:
                 // TODO: be more selective about pushing data to the registry, check for duplicates etc. 
                 auto registry = config().blackboard->get<std::shared_ptr<ObjectRegistry>>("object_registry"); 
                 registry->push_back(obj); 
-                std::cout << "Added object of type '" << obj.mId << "' to the registry!\n"; 
+                std::cout << "Added object of type '" << obj.mId << "' to the registry!\n";
+                std::cout << "Object '" << obj.mId << "' has pose " << obj.mPose.x << " " << obj.mPose.y << " " << obj.mPose.z << std::endl;   
 
                 if(mObjectIdToFind == obj.mId)
                 {
-                    std::cout << "Target object '" << obj.mId << "' has been found!\n";       
+                    std::cout << "Target object '" << obj.mId << "' has been found!\n";
                     mTargetFound = true; 
                 }
             }
@@ -140,6 +143,68 @@ private:
     bool mTargetFound; 
 };
 
+class PlanObjectApproachNode : public BT::SyncActionNode
+{
+public: 
+    PlanObjectApproachNode(const std::string&        name,
+                           const BT::NodeConfig&     config)
+        : BT::SyncActionNode(name, config)
+    {}
 
+    ~PlanObjectApproachNode() = default; 
+
+    static BT::PortsList providedPorts()
+    {
+        return {
+            BT::InputPort<std::string>("object_id"), 
+            BT::OutputPort<std::shared_ptr<Waypoint>>("goal_pose")
+        }; 
+    }
+
+    BT::NodeStatus tick() override
+    {   
+        std::string objectId = getInput<std::string>("object_id").value(); 
+
+        auto registry = config().blackboard->get<std::shared_ptr<ObjectRegistry>>("object_registry"); 
+        for(int i = 0; i < registry->size(); i++)
+        {
+            std::cout << "Checking object of type: " << registry->at(i).mId << "\n"; 
+
+            if(objectId == registry->at(i).mId)
+            {
+                Pose6D objPose_G = registry->at(i).mPose; 
+                Eigen::Quaterniond q(objPose_G.qw, objPose_G.qx, objPose_G.qy, objPose_G.qz);
+                auto R_G_O = q.toRotationMatrix();  
+                Eigen::Vector3d obj_G(objPose_G.x, objPose_G.y, objPose_G.z); 
+                Eigen::Vector3d offset_B(0.25, 0, 0); // TODO: make config 
+                Eigen::Vector3d goal_G = obj_G + R_G_O * offset_B; 
+
+                Pose6D goal; 
+                goal.x = goal_G.x(); 
+                goal.y = goal_G.y(); 
+                goal.z = goal_G.z(); 
+
+                goal.qw = 1;
+                goal.qx = 0;
+                goal.qy = 0;
+                goal.qz = 0; 
+
+                Waypoint wp; 
+                wp.goal = goal; 
+                wp.tolerance = {0.01, 0.01, 0.01, 2, 2, 2}; 
+
+                auto poseWp = std::make_shared<Waypoint>(wp);
+                setOutput("goal_pose", poseWp);
+                return BT::NodeStatus::SUCCESS;
+            }
+        }
+
+        std::cerr << "Failed to find object_id to plan approach\n"; 
+        return BT::NodeStatus::FAILURE; 
+    }
+
+private: 
+
+}; 
 
 #endif

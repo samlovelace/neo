@@ -27,6 +27,8 @@ void VehicleInterface::send(const Waypoint& aGoalPose)
     wp.position.set__y(aGoalPose.goal.y); 
     wp.position.set__z(aGoalPose.goal.z); 
 
+    std::cout << "Goal position " << wp.position.x << " " << wp.position.y << " " << wp.position.z << std::endl; 
+
     wp.quat.set__x(aGoalPose.goal.qx);
     wp.quat.set__y(aGoalPose.goal.qy);
     wp.quat.set__z(aGoalPose.goal.qz);
@@ -54,7 +56,7 @@ void VehicleInterface::send(const Waypoint& aGoalPose)
 
     wp.set__position_tolerance(pos_tol); 
     wp.set__euler_tolerance(euler_tol); 
-    wp.set__execution_duration(60); 
+    wp.set__execution_duration(600); // TODO: make settable per waypoint
 
     RosTopicManager::getInstance()->publishMessage("robot/vehicle/waypoint", wp); 
 }

@@ -39,15 +39,16 @@ void PerceptionInterface::responseCallback(robot_idl::msg::FoundObjectResponse::
     objData.mId = aResponse->object_type.data;
     
     Pose6D pose; 
-    pose.x = aResponse->obj_centroid_g.point.x;
-    pose.y = aResponse->obj_centroid_g.point.y;
-    pose.z = aResponse->obj_centroid_g.point.z; 
+    pose.x = aResponse->obj_pose_g.pose.position.x;
+    pose.y = aResponse->obj_pose_g.pose.position.y;
+    pose.z = aResponse->obj_pose_g.pose.position.z; 
     
-    // TODO: this might be populated in the response depending on the object type 
-    pose.qw = 1; 
-    pose.qx = 0; 
-    pose.qy = 0; 
-    pose.qz = 0; 
+    pose.qw = aResponse->obj_pose_g.pose.orientation.w; 
+    pose.qx = aResponse->obj_pose_g.pose.orientation.w; 
+    pose.qy = aResponse->obj_pose_g.pose.orientation.w; 
+    pose.qz = aResponse->obj_pose_g.pose.orientation.w; 
+
+    objData.mPose = pose; 
 
     std::lock_guard<std::mutex> lock(mFoundObjectsMutex); 
     mFoundObjects.push_back(objData); 
