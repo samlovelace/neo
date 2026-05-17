@@ -119,7 +119,8 @@ public:
                 auto registry = config().blackboard->get<std::shared_ptr<ObjectRegistry>>("object_registry"); 
                 registry->push_back(obj); 
                 std::cout << "Added object of type '" << obj.mId << "' to the registry!\n";
-                std::cout << "Object '" << obj.mId << "' has pose " << obj.mPose.x << " " << obj.mPose.y << " " << obj.mPose.z << std::endl;   
+                std::cout << "Object '" << obj.mId << "' has pose (xyz wxyz):" << obj.mPose.x << " " << obj.mPose.y << " " << obj.mPose.z 
+                          << " " << obj.mPose.qw << " " << obj.mPose.qx << " " << obj.mPose.qy << " " << obj.mPose.qz << std::endl;  
 
                 if(mObjectIdToFind == obj.mId)
                 {
@@ -174,20 +175,31 @@ public:
             {
                 Pose6D objPose_G = registry->at(i).mPose; 
                 Eigen::Quaterniond q(objPose_G.qw, objPose_G.qx, objPose_G.qy, objPose_G.qz);
-                auto R_G_O = q.toRotationMatrix();  
-                Eigen::Vector3d obj_G(objPose_G.x, objPose_G.y, objPose_G.z); 
-                Eigen::Vector3d offset_B(0.25, 0, 0); // TODO: make config 
-                Eigen::Vector3d goal_G = obj_G + R_G_O * offset_B; 
+                auto R_G_O = q.normalized().toRotationMatrix();   
+                Eigen::Isometry3d T_G_O(R_G_O);
+                T_G_O.translation() = Eigen::Vector3d(objPose_G.x, objPose_G.y, objPose_G.z);
+                
+                Eigen::Isometry3d T_O_R = Eigen::Isometry3d::Identity();
+                T_O_R.translation() = Eigen::Vector3d(0.25, 0.25, -0.75);  // TODO: make config
+                Eigen::Matrix3d R;
+                R.col(0) = Eigen::Vector3d(0,  0,  -1);   // robot +X in object frame
+                R.col(1) = Eigen::Vector3d(-1, 0,  0);   // robot +Y in object frame
+                R.col(2) = Eigen::Vector3d(0, -1,  0);   // robot +Z in object frame
+
+                T_O_R.linear() = R;
+
+                Eigen::Isometry3d T_G_R = T_G_O * T_O_R; 
 
                 Pose6D goal; 
-                goal.x = goal_G.x(); 
-                goal.y = goal_G.y(); 
-                goal.z = goal_G.z(); 
+                goal.x = T_G_R.translation().x(); 
+                goal.y = T_G_R.translation().y(); 
+                goal.z = T_G_R.translation().z(); 
 
-                goal.qw = 1;
-                goal.qx = 0;
-                goal.qy = 0;
-                goal.qz = 0; 
+                Eigen::Quaterniond q_des(T_G_R.rotation()); 
+                goal.qw = q_des.w(); 
+                goal.qx = q_des.x();
+                goal.qy = q_des.y();
+                goal.qz = q_des.z(); 
 
                 Waypoint wp; 
                 wp.goal = goal; 

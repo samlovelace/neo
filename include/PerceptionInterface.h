@@ -5,8 +5,8 @@
 #include <vector> 
 #include <mutex> 
 
-#include "robot_idl/msg/vision_command.hpp"
-#include "robot_idl/msg/found_object_response.hpp"
+#include "ptera_msgs/msg/vision_command.hpp"
+#include "ptera_msgs/msg/found_object_response.hpp"
 
 #include "ObjectData.hpp"
 
@@ -21,7 +21,7 @@ public:
     bool popFoundObjects(std::vector<ObjectData>& aFoundObjects); 
 
 private:
-    void responseCallback(robot_idl::msg::FoundObjectResponse::SharedPtr aResponse); 
+    void responseCallback(ptera_msgs::msg::FoundObjectResponse::SharedPtr aResponse); 
     std::vector<ObjectData> mFoundObjects; 
     std::mutex mFoundObjectsMutex; 
 

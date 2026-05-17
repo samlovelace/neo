@@ -8,7 +8,7 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(robot_idl REQUIRED)
+find_package(ptera_msgs REQUIRED)
 find_package(behaviortree_cpp REQUIRED)
 find_package(Eigen3 REQUIRED)
 
@@ -27,7 +27,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 
 ament_target_dependencies(${PROJECT_NAME} 
 	rclcpp
-	robot_idl	
+	ptera_msgs	
 	behaviortree_cpp
 	Eigen3
 )

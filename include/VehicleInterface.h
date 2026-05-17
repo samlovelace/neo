@@ -4,8 +4,8 @@
 #include <mutex> 
 
 #include "CommonTypes.hpp"
-#include "robot_idl/msg/controller_status.hpp"
-#include "robot_idl/msg/robot_state.hpp"
+#include "ptera_msgs/msg/controller_status.hpp"
+#include "ptera_msgs/msg/robot_state.hpp"
 
 class VehicleInterface 
 { 
@@ -19,12 +19,12 @@ public:
     bool isConnected(); 
 
 private:
-    void statusCallback(robot_idl::msg::ControllerStatus::SharedPtr aStatus); 
-    void poseCallback(robot_idl::msg::RobotState::SharedPtr aState);
+    void statusCallback(ptera_msgs::msg::ControllerStatus::SharedPtr aStatus); 
+    void poseCallback(ptera_msgs::msg::RobotState::SharedPtr aState);
 
 private: 
     std::mutex mStatusMutex; 
-    robot_idl::msg::ControllerStatus mLatestStatus;
+    ptera_msgs::msg::ControllerStatus mLatestStatus;
     bool mStatusRecvd;  
 
     std::mutex mPoseMutex; 

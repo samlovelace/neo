@@ -1,17 +1,17 @@
 
 #include "VehicleInterface.h"
-#include "robot_idl/msg/vehicle_waypoint.hpp"
+#include "ptera_msgs/msg/vehicle_waypoint.hpp"
 #include "RosTopicManager.hpp"
 #include <eigen3/Eigen/Dense>
 
 VehicleInterface::VehicleInterface()
 {
-    RosTopicManager::getInstance()->createPublisher<robot_idl::msg::VehicleWaypoint>("robot/vehicle/waypoint"); 
+    RosTopicManager::getInstance()->createPublisher<ptera_msgs::msg::VehicleWaypoint>("robot/vehicle/waypoint"); 
 
-    RosTopicManager::getInstance()->createSubscriber<robot_idl::msg::ControllerStatus>("robot/vehicle/controller_status",
+    RosTopicManager::getInstance()->createSubscriber<ptera_msgs::msg::ControllerStatus>("robot/vehicle/controller_status",
         std::bind(&VehicleInterface::statusCallback, this, std::placeholders::_1));
 
-    RosTopicManager::getInstance()->createSubscriber<robot_idl::msg::RobotState>("robot/state", 
+    RosTopicManager::getInstance()->createSubscriber<ptera_msgs::msg::RobotState>("robot/state", 
         std::bind(&VehicleInterface::poseCallback, this, std::placeholders::_1)); 
 }
 
@@ -22,7 +22,7 @@ VehicleInterface::~VehicleInterface()
 
 void VehicleInterface::send(const Waypoint& aGoalPose)
 {
-    robot_idl::msg::VehicleWaypoint wp; 
+    ptera_msgs::msg::VehicleWaypoint wp; 
     wp.position.set__x(aGoalPose.goal.x); 
     wp.position.set__y(aGoalPose.goal.y); 
     wp.position.set__z(aGoalPose.goal.z); 
@@ -44,12 +44,12 @@ void VehicleInterface::send(const Waypoint& aGoalPose)
     wp.euler.set__pitch(euler(1)); 
     wp.euler.set__roll(euler(0)); 
 
-    robot_idl::msg::Vec3 pos_tol; 
+    ptera_msgs::msg::Vec3 pos_tol; 
     pos_tol.set__x(aGoalPose.tolerance[0]);
     pos_tol.set__x(aGoalPose.tolerance[1]);
     pos_tol.set__x(aGoalPose.tolerance[2]);
 
-    robot_idl::msg::Euler euler_tol; 
+    ptera_msgs::msg::Euler euler_tol; 
     euler_tol.set__yaw(aGoalPose.tolerance[5]); 
     euler_tol.set__pitch(aGoalPose.tolerance[4]); 
     euler_tol.set__roll(aGoalPose.tolerance[3]); 
@@ -61,7 +61,7 @@ void VehicleInterface::send(const Waypoint& aGoalPose)
     RosTopicManager::getInstance()->publishMessage("robot/vehicle/waypoint", wp); 
 }
 
-void VehicleInterface::statusCallback(robot_idl::msg::ControllerStatus::SharedPtr aStatus)
+void VehicleInterface::statusCallback(ptera_msgs::msg::ControllerStatus::SharedPtr aStatus)
 {
     std::lock_guard<std::mutex> lock(mStatusMutex); 
     mLatestStatus = *aStatus;
@@ -70,7 +70,7 @@ void VehicleInterface::statusCallback(robot_idl::msg::ControllerStatus::SharedPt
         mStatusRecvd = true; 
 }
 
-void VehicleInterface::poseCallback(robot_idl::msg::RobotState::SharedPtr aState)
+void VehicleInterface::poseCallback(ptera_msgs::msg::RobotState::SharedPtr aState)
 {
     Pose6D pose; 
     pose.x = aState->position.x; 
@@ -98,7 +98,7 @@ Pose6D VehicleInterface::currentPose()
 bool VehicleInterface::isArrived()
 {
     std::lock_guard<std::mutex> lock(mStatusMutex); 
-    if(robot_idl::msg::ControllerStatus::ARRIVED == mLatestStatus.arrival)
+    if(ptera_msgs::msg::ControllerStatus::ARRIVED == mLatestStatus.arrival)
     {
         return true; 
     }

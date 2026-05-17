@@ -4,9 +4,9 @@
 
 PerceptionInterface::PerceptionInterface()
 {
-    RosTopicManager::getInstance()->createPublisher<robot_idl::msg::VisionCommand>("vision/command");
+    RosTopicManager::getInstance()->createPublisher<ptera_msgs::msg::VisionCommand>("vision/command");
     
-    RosTopicManager::getInstance()->createSubscriber<robot_idl::msg::FoundObjectResponse>("vision/response", 
+    RosTopicManager::getInstance()->createSubscriber<ptera_msgs::msg::FoundObjectResponse>("vision/response", 
         std::bind(&PerceptionInterface::responseCallback, this, std::placeholders::_1)); 
     
 }
@@ -24,14 +24,14 @@ void PerceptionInterface::findObject(const std::string& anObjectId)
     std_msgs::msg::String idStr; 
     idStr.set__data(anObjectId); 
 
-    robot_idl::msg::VisionCommand cmd; 
+    ptera_msgs::msg::VisionCommand cmd; 
     cmd.set__command(cmdStr); 
     cmd.set__object_type(idStr); 
 
     RosTopicManager::getInstance()->publishMessage("vision/command", cmd); 
 }
 
-void PerceptionInterface::responseCallback(robot_idl::msg::FoundObjectResponse::SharedPtr aResponse)
+void PerceptionInterface::responseCallback(ptera_msgs::msg::FoundObjectResponse::SharedPtr aResponse)
 {
     // TODO: populate rest of fields 
 
@@ -44,9 +44,9 @@ void PerceptionInterface::responseCallback(robot_idl::msg::FoundObjectResponse::
     pose.z = aResponse->obj_pose_g.pose.position.z; 
     
     pose.qw = aResponse->obj_pose_g.pose.orientation.w; 
-    pose.qx = aResponse->obj_pose_g.pose.orientation.w; 
-    pose.qy = aResponse->obj_pose_g.pose.orientation.w; 
-    pose.qz = aResponse->obj_pose_g.pose.orientation.w; 
+    pose.qx = aResponse->obj_pose_g.pose.orientation.x; 
+    pose.qy = aResponse->obj_pose_g.pose.orientation.y; 
+    pose.qz = aResponse->obj_pose_g.pose.orientation.z; 
 
     objData.mPose = pose; 
 
