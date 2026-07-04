@@ -7,6 +7,7 @@
 #include <plog/Log.h>
 #include <queue>
 #include <cmath>
+#include <algorithm>
 
 #include <eigen3/Eigen/Dense>
 
@@ -65,14 +66,14 @@ public:
             wp.y = aCurrentPose.y;
             wp.z = aCurrentPose.z;
 
-            // Extract starting yaw from current pose
-            Eigen::Quaterniond q_start(
-                aCurrentPose.qw, aCurrentPose.qx, aCurrentPose.qy, aCurrentPose.qz
-            );
-            Eigen::Vector3d rpy_start = q_start.toRotationMatrix().eulerAngles(0, 1, 2);
-            double roll_start  = rpy_start[0];
-            double pitch_start = rpy_start[1];
-            double yaw_start   = rpy_start[2];
+            // Extract starting roll/pitch/yaw from current pose. Use atan2-based
+            // extraction rather than Eigen::eulerAngles(): that call forces its first
+            // angle into [0, pi], which for a near-planar rotation (roll/pitch ~ 0) can
+            // flip to the equivalent (pi, pi, yaw - pi) solution and be off by 180 deg.
+            double qw = aCurrentPose.qw, qx = aCurrentPose.qx, qy = aCurrentPose.qy, qz = aCurrentPose.qz;
+            double roll_start  = std::atan2(2.0 * (qw * qx + qy * qz), 1.0 - 2.0 * (qx * qx + qy * qy));
+            double pitch_start = std::asin(std::clamp(2.0 * (qw * qy - qz * qx), -1.0, 1.0));
+            double yaw_start   = std::atan2(2.0 * (qw * qz + qx * qy), 1.0 - 2.0 * (qy * qy + qz * qz));
 
             LOGD << "Starting yaw: " << yaw_start << " rad";
 

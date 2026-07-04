@@ -1,4 +1,6 @@
 
+#include <csignal>
+#include <atomic>
 #include <plog/Log.h>
 
 #include <rclcpp/rclcpp.hpp>
@@ -14,17 +16,36 @@
 
 #include "ObjectNodes.hpp"
 
+namespace
+{
+    std::atomic<bool> gShutdownRequested{false};
+
+    void signalHandler(int)
+    {
+        gShutdownRequested = true;
+        rclcpp::shutdown();  // installing our own handler replaces rclcpp's; unblock spin() ourselves
+    }
+}
+
 int main()
 {
     DataLogger::get().createMainLog("neo");
 
     rclcpp::init(0, nullptr);
+    std::signal(SIGINT, signalHandler);
     RosTopicManager::getInstance()->spinNode();
 
     auto veh = std::make_shared<VehicleInterface>();
     while(!veh->isConnected())
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(250)); 
+        if(gShutdownRequested || !rclcpp::ok())
+        {
+            LOGI << "--- shutdown requested before vehicle connected ---";
+            rclcpp::shutdown();
+            return 0;
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(250));
     }
 
     BT::BehaviorTreeFactory factory; 
@@ -96,7 +117,7 @@ int main()
     tree.rootBlackboard()->set<std::string>("object_id", "test");  // TODO: this should come from somewhere else, maybe parsed from a natural language cmd
 
     LOGI << "--- starting tree ---";
-    while(true)
+    while(!gShutdownRequested && rclcpp::ok())
     {
         auto status = tree.tickOnce();
 
@@ -109,6 +130,11 @@ int main()
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 
-    rclcpp::shutdown(); 
-    return 0; 
+    if(gShutdownRequested)
+    {
+        LOGI << "shutdown requested, exiting.";
+    }
+
+    rclcpp::shutdown();
+    return 0;
 }
