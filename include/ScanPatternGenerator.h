@@ -1,11 +1,11 @@
 #ifndef SCANPATTERNGENERATOR_H
 #define SCANPATTERNGENERATOR_H
  
-#include <string> 
+#include <string>
 #include <functional>
-#include <memory> 
-#include <iostream>
-#include <queue> 
+#include <memory>
+#include <plog/Log.h>
+#include <queue>
 #include <cmath>
 
 #include <eigen3/Eigen/Dense>
@@ -74,7 +74,7 @@ public:
             double pitch_start = rpy_start[1];
             double yaw_start   = rpy_start[2];
 
-            std::cout << "Starting yaw: " << yaw_start << " rad" << std::endl;
+            LOGD << "Starting yaw: " << yaw_start << " rad";
 
             for (int i = 0; i < numWaypoints; i++)
             {
@@ -100,11 +100,11 @@ public:
         }
         else
         {
-            std::cout << "Unsupported scan pattern type!!!!! " << std::endl; 
+            LOGE << "Unsupported scan pattern type!!!!! ";
             return nullptr; 
         }
 
-        std::cout << "Generated scan pattern with " << waypoints.size() << " waypoints" << std::endl; 
+        LOGD << "Generated scan pattern with " << waypoints.size() << " waypoints";
         auto pattern = std::make_unique<ScanPattern>(waypoints); 
         return pattern; 
     }

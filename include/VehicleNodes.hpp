@@ -1,8 +1,8 @@
 #ifndef VEHICLENODES_HPP
 #define VEHICLENODES_HPP
 
-#include <memory> 
-#include <iostream> 
+#include <memory>
+#include <plog/Log.h>
 
 #include "behaviortree_cpp/bt_factory.h"
 #include "behaviortree_cpp/action_node.h"
@@ -36,7 +36,7 @@ public:
             return BT::NodeStatus::FAILURE; 
         }
 
-        std::cout << "Sending waypoint to mobile base..." << std::endl; 
+        LOGD << "Sending waypoint to mobile base...";
         mInterface->send(*goalPose.value());
         return BT::NodeStatus::RUNNING; 
     }
@@ -45,7 +45,7 @@ public:
     {
         if(mInterface->isArrived())
         {
-            std::cout << "Waiting for vehicle ack..." << std::endl; 
+            LOGV << "Waiting for vehicle ack...";
             return BT::NodeStatus::RUNNING; 
         }
 
@@ -78,18 +78,18 @@ public:
     BT::NodeStatus onStart() override
     {
         // Init timeout counter
-        std::cout << "starting vehicle arrival check..." << std::endl;  
+        LOGD << "starting vehicle arrival check...";
         return BT::NodeStatus::RUNNING; 
     }
 
     BT::NodeStatus onRunning() override
     {
-        // TODO: add timeout and return failure if timeout reached 
-        //std::cout << "polling vehicle arrival state..." << std::endl; 
+        // TODO: add timeout and return failure if timeout reached
+        //LOGV << "polling vehicle arrival state...";
 
         if(mInterface->isArrived())
         {
-            std::cout << "vehicle is arrived..." << std::endl; 
+            LOGI << "vehicle is arrived...";
             return BT::NodeStatus::SUCCESS; 
         }
  
@@ -128,7 +128,7 @@ public:
         if (!mScanPattern)
         {
             auto pattern      = getInput<std::string>("pattern").value();
-            std::cout << "Generating " << pattern << " scan pattern" << std::endl; 
+            LOGD << "Generating " << pattern << " scan pattern";
 
             auto current_pose = mInterface->currentPose();
             mScanPattern      = ScanPatternGenerator::generate(pattern, current_pose);
@@ -139,7 +139,7 @@ public:
 
         auto pose = std::make_shared<Waypoint>(mScanPattern->nextWaypoint());
         setOutput("goal_pose", pose);
-        std::cout << "sending next waypoint..." << std::endl; 
+        LOGV << "sending next waypoint...";
         return BT::NodeStatus::SUCCESS;
     }
 

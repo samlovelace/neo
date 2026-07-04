@@ -1,5 +1,5 @@
 
-#include <iostream> 
+#include <plog/Log.h>
 
 #include <rclcpp/rclcpp.hpp>
 #include "behaviortree_cpp/behavior_tree.h"
@@ -8,15 +8,18 @@
 #include "RosTopicManager.hpp"
 #include "ObjectData.hpp"
 #include "VehicleInterface.h"
+#include "DataLogger.h"
 
 #include "NodeRegistration.hpp"
 
 #include "ObjectNodes.hpp"
 
 int main()
-{   
-    rclcpp::init(0, nullptr); 
-    RosTopicManager::getInstance()->spinNode(); 
+{
+    DataLogger::get().createMainLog("neo");
+
+    rclcpp::init(0, nullptr);
+    RosTopicManager::getInstance()->spinNode();
 
     auto veh = std::make_shared<VehicleInterface>();
     while(!veh->isConnected())
@@ -92,17 +95,17 @@ int main()
     tree.rootBlackboard()->set("object_registry", registry); 
     tree.rootBlackboard()->set<std::string>("object_id", "test");  // TODO: this should come from somewhere else, maybe parsed from a natural language cmd
 
-    std::cout << "--- starting tree ---" << std::endl;
+    LOGI << "--- starting tree ---";
     while(true)
     {
-        auto status = tree.tickOnce(); 
-    
+        auto status = tree.tickOnce();
+
         if(status != BT::NodeStatus::RUNNING)
         {
-            std::cout << "--- tree finished ---" << std::endl; 
-            break; 
+            LOGI << "--- tree finished ---";
+            break;
         }
-    
+
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 

@@ -5,6 +5,7 @@
 #include <behaviortree_cpp/action_node.h>
 
 #include <eigen3/Eigen/Dense>
+#include <plog/Log.h>
 
 #include "ObjectData.hpp"
 #include "PerceptionInterface.h"
@@ -35,12 +36,12 @@ public:
         {
             if(objectId == obj.mId)
             {
-                std::cout << "Object " << objectId << " is already known\n"; 
-                return BT::NodeStatus::SUCCESS; 
+                LOGD << "Object " << objectId << " is already known";
+                return BT::NodeStatus::SUCCESS;
             }
         }
 
-        std::cout << "Could not find " << objectId << " in registry, starting scan...\n"; 
+        LOGD << "Could not find " << objectId << " in registry, starting scan...";
         return BT::NodeStatus::FAILURE; 
     }
 
@@ -69,7 +70,7 @@ public:
     {
         std::string objectId = getInput<std::string>("object_id").value(); 
         mPerception->findObject(objectId);
-        std::cout << "Commanded perception to find object '" << objectId << "'\n"; 
+        LOGD << "Commanded perception to find object '" << objectId << "'";
         return BT::NodeStatus::SUCCESS; 
     }
 
@@ -112,20 +113,20 @@ public:
         std::vector<ObjectData> objects; 
         if(mPerception->popFoundObjects(objects))
         {
-            std::cout << "Perception found " << objects.size() << " new objects!\n";
+            LOGI << "Perception found " << objects.size() << " new objects!";
             for(const auto& obj : objects)
             {
-                // TODO: be more selective about pushing data to the registry, check for duplicates etc. 
-                auto registry = config().blackboard->get<std::shared_ptr<ObjectRegistry>>("object_registry"); 
-                registry->push_back(obj); 
-                std::cout << "Added object of type '" << obj.mId << "' to the registry!\n";
-                std::cout << "Object '" << obj.mId << "' has pose (xyz wxyz):" << obj.mPose.x << " " << obj.mPose.y << " " << obj.mPose.z 
-                          << " " << obj.mPose.qw << " " << obj.mPose.qx << " " << obj.mPose.qy << " " << obj.mPose.qz << std::endl;  
+                // TODO: be more selective about pushing data to the registry, check for duplicates etc.
+                auto registry = config().blackboard->get<std::shared_ptr<ObjectRegistry>>("object_registry");
+                registry->push_back(obj);
+                LOGI << "Added object of type '" << obj.mId << "' to the registry!";
+                LOGD << "Object '" << obj.mId << "' has pose (xyz wxyz):" << obj.mPose.x << " " << obj.mPose.y << " " << obj.mPose.z
+                     << " " << obj.mPose.qw << " " << obj.mPose.qx << " " << obj.mPose.qy << " " << obj.mPose.qz;
 
                 if(mObjectIdToFind == obj.mId)
                 {
-                    std::cout << "Target object '" << obj.mId << "' has been found!\n";
-                    mTargetFound = true; 
+                    LOGI << "Target object '" << obj.mId << "' has been found!";
+                    mTargetFound = true;
                 }
             }
         }
@@ -169,7 +170,7 @@ public:
         auto registry = config().blackboard->get<std::shared_ptr<ObjectRegistry>>("object_registry"); 
         for(int i = 0; i < registry->size(); i++)
         {
-            std::cout << "Checking object of type: " << registry->at(i).mId << "\n"; 
+            LOGV << "Checking object of type: " << registry->at(i).mId;
 
             if(objectId == registry->at(i).mId)
             {
@@ -211,7 +212,7 @@ public:
             }
         }
 
-        std::cerr << "Failed to find object_id to plan approach\n"; 
+        LOGE << "Failed to find object_id to plan approach";
         return BT::NodeStatus::FAILURE; 
     }
 

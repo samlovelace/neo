@@ -5,6 +5,7 @@
 #include <eigen3/Eigen/Dense>
 #include <algorithm>
 #include <cmath>
+#include <plog/Log.h>
 
 VehicleInterface::VehicleInterface()
 {
@@ -29,7 +30,7 @@ void VehicleInterface::send(const Waypoint& aGoalPose)
     wp.position.set__y(aGoalPose.goal.y); 
     wp.position.set__z(aGoalPose.goal.z); 
 
-    std::cout << "Goal position " << wp.position.x << " " << wp.position.y << " " << wp.position.z << std::endl; 
+    LOGD << "Goal position " << wp.position.x << " " << wp.position.y << " " << wp.position.z;
 
     wp.quat.set__x(aGoalPose.goal.qx);
     wp.quat.set__y(aGoalPose.goal.qy);
@@ -45,7 +46,7 @@ void VehicleInterface::send(const Waypoint& aGoalPose)
     double pitch = std::asin(std::clamp(2.0 * (qw * qy - qz * qx), -1.0, 1.0));
     double yaw   = std::atan2(2.0 * (qw * qz + qx * qy), 1.0 - 2.0 * (qy * qy + qz * qz));
 
-    std::cout << "Goal orientation " << roll << " " << pitch << " " << yaw << std::endl;
+    LOGD << "Goal orientation " << roll << " " << pitch << " " << yaw;
 
     wp.euler.set__yaw(yaw);
     wp.euler.set__pitch(pitch);
