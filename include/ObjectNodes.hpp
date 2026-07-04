@@ -182,7 +182,7 @@ public:
                 Eigen::Isometry3d T_O_R = Eigen::Isometry3d::Identity();
                 T_O_R.translation() = Eigen::Vector3d(0.25, 0.25, -0.75);  // TODO: make config
                 Eigen::Matrix3d R;
-                R.col(0) = Eigen::Vector3d(0,  0,  -1);   // robot +X in object frame
+                R.col(0) = Eigen::Vector3d(0,  0,  1);   // robot +X in object frame
                 R.col(1) = Eigen::Vector3d(-1, 0,  0);   // robot +Y in object frame
                 R.col(2) = Eigen::Vector3d(0, -1,  0);   // robot +Z in object frame
 

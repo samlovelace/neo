@@ -3,6 +3,8 @@
 #include "ptera_msgs/msg/vehicle_waypoint.hpp"
 #include "RosTopicManager.hpp"
 #include <eigen3/Eigen/Dense>
+#include <algorithm>
+#include <cmath>
 
 VehicleInterface::VehicleInterface()
 {
@@ -34,15 +36,20 @@ void VehicleInterface::send(const Waypoint& aGoalPose)
     wp.quat.set__z(aGoalPose.goal.qz);
     wp.quat.set__w(aGoalPose.goal.qw);
 
-    // compute euler from quat 
-    Eigen::Quaterniond q(aGoalPose.goal.qw, aGoalPose.goal.qx, aGoalPose.goal.qy, aGoalPose.goal.qz); 
-    Eigen::Vector3d euler = q.toRotationMatrix().eulerAngles(0, 1, 2); 
+    // compute euler from quat (atan2-based roll/pitch/yaw, not Eigen::eulerAngles():
+    // eulerAngles() forces its first angle into [0, pi], which for a near-planar
+    // rotation (roll/pitch ~ 0) can flip to the equivalent (pi, pi, yaw - pi)
+    // solution and send yaw off by 180 degrees)
+    double qw = aGoalPose.goal.qw, qx = aGoalPose.goal.qx, qy = aGoalPose.goal.qy, qz = aGoalPose.goal.qz;
+    double roll  = std::atan2(2.0 * (qw * qx + qy * qz), 1.0 - 2.0 * (qx * qx + qy * qy));
+    double pitch = std::asin(std::clamp(2.0 * (qw * qy - qz * qx), -1.0, 1.0));
+    double yaw   = std::atan2(2.0 * (qw * qz + qx * qy), 1.0 - 2.0 * (qy * qy + qz * qz));
 
-    std::cout << "Goal orientation " << euler.transpose() << std::endl; 
-    
-    wp.euler.set__yaw(euler(2)); 
-    wp.euler.set__pitch(euler(1)); 
-    wp.euler.set__roll(euler(0)); 
+    std::cout << "Goal orientation " << roll << " " << pitch << " " << yaw << std::endl;
+
+    wp.euler.set__yaw(yaw);
+    wp.euler.set__pitch(pitch);
+    wp.euler.set__roll(roll);
 
     ptera_msgs::msg::Vec3 pos_tol; 
     pos_tol.set__x(aGoalPose.tolerance[0]);
