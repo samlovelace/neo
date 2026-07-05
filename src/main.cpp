@@ -4,6 +4,7 @@
 #include <plog/Log.h>
 
 #include <rclcpp/rclcpp.hpp>
+#include <ament_index_cpp/get_package_share_directory.hpp>
 #include "behaviortree_cpp/behavior_tree.h"
 #include "behaviortree_cpp/bt_factory.h"
 
@@ -13,6 +14,7 @@
 #include "DataLogger.h"
 
 #include "NodeRegistration.hpp"
+#include "BehaviorTreeLoader.hpp"
 
 #include "ObjectNodes.hpp"
 
@@ -40,7 +42,7 @@ int main()
     {
         if(gShutdownRequested || !rclcpp::ok())
         {
-            LOGI << "--- shutdown requested before vehicle connected ---";
+            LOGI << "shutdown requested before vehicle connected";
             rclcpp::shutdown();
             return 0;
         }
@@ -60,58 +62,11 @@ int main()
     factory.registerNodeType<PlanObjectApproachNode>("PlanObjectApproach"); 
     registerPerceptionNodes(factory, percep); 
 
-    auto tree = factory.createTreeFromText(R"(
-        <root BTCPP_format="4" main_tree_to_execute="FindObject">
-            <BehaviorTree ID="FindObject">
-                <Fallback name="find_object_or_scan">
-                    <CheckObjectKnown object_id="{object_id}"/>
-                    <Sequence>
-                        <SendFindObject object_id="{object_id}"/>
-                        <Parallel success_count="1" failure_count="2">
-                            <PollFoundObject object_id="{object_id}"/>
-                            <SubTree ID="VehicleScan"/>
-                        </Parallel>
-                        <SubTree ID="ApproachObject" object_id="{object_id}" _autoremap="true"/>
-                    </Sequence>
-                </Fallback>
-            </BehaviorTree>
+    std::string treesDir = ament_index_cpp::get_package_share_directory("neo") + "/trees";
+    BehaviorTreeLoader::registerTreesFromDirectory(factory, treesDir);
+    auto tree = factory.createTree("FindObject");
 
-            <BehaviorTree ID="VehicleScan">
-                <KeepRunningUntilFailure>
-                    <Sequence>
-                        <GetNextScanWaypoint pattern="pirouette" goal_pose="{goal_pose}"/>
-                        <SendVehicleWaypoint goal_pose="{goal_pose}"/>
-                        <PollVehicleArrival/>
-                    </Sequence>
-                </KeepRunningUntilFailure>
-            </BehaviorTree>
-
-            <BehaviorTree ID="ApproachObject">
-                <Sequence>
-                    <PlanObjectApproach object_id="{object_id}" goal_pose="{goal_pose}"/>
-                    <SendVehicleWaypoint goal_pose="{goal_pose}"/>
-                    <PollVehicleArrival/>
-                </Sequence>
-            </BehaviorTree> 
-
-        </root>
-            )"); 
-
-    // auto tree = factory.createTreeFromText(R"(
-    //     <root BTCPP_format="4">
-    //         <BehaviorTree ID="VehicleScan">
-    //             <KeepRunningUntilFailure>
-    //                 <Sequence>
-    //                     <GetNextScanWaypoint pattern="pirouette" goal_pose="{goal_pose}"/>
-    //                     <SendVehicleWaypoint goal_pose="{goal_pose}"/>
-    //                     <PollVehicleArrival/>
-    //                 </Sequence> 
-    //             </KeepRunningUntilFailure>
-    //         </BehaviorTree>
-    //     </root>
-    // )"); 
-
-    // initialize the object registry on the blackboard 
+    // initialize the object registry on the blackboard
     auto registry = std::make_shared<ObjectRegistry>(); 
     tree.rootBlackboard()->set("object_registry", registry); 
     tree.rootBlackboard()->set<std::string>("object_id", "test");  // TODO: this should come from somewhere else, maybe parsed from a natural language cmd

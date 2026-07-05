@@ -1,0 +1,11 @@
+<root BTCPP_format="4" main_tree_to_execute="VehicleScan">
+    <BehaviorTree ID="VehicleScan">
+        <KeepRunningUntilFailure>
+            <Sequence>
+                <GetNextScanWaypoint pattern="pirouette" goal_pose="{goal_pose}"/>
+                <SendVehicleWaypoint goal_pose="{goal_pose}"/>
+                <PollVehicleArrival/>
+            </Sequence>
+        </KeepRunningUntilFailure>
+    </BehaviorTree>
+</root>

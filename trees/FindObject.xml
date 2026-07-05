@@ -1,0 +1,15 @@
+<root BTCPP_format="4" main_tree_to_execute="FindObject">
+    <BehaviorTree ID="FindObject">
+        <Fallback name="find_object_or_scan">
+            <CheckObjectKnown object_id="{object_id}"/>
+            <Sequence>
+                <SendFindObject object_id="{object_id}"/>
+                <Parallel success_count="1" failure_count="2">
+                    <PollFoundObject object_id="{object_id}"/>
+                    <SubTree ID="VehicleScan"/>
+                </Parallel>
+                <SubTree ID="ApproachObject" object_id="{object_id}" _autoremap="true"/>
+            </Sequence>
+        </Fallback>
+    </BehaviorTree>
+</root>

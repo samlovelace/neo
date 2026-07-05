@@ -8,6 +8,7 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 find_package(ptera_msgs REQUIRED)
 find_package(behaviortree_cpp REQUIRED)
 find_package(Eigen3 REQUIRED)
@@ -31,10 +32,12 @@ target_link_libraries(${PROJECT_NAME} plog::plog)
 
 ament_target_dependencies(${PROJECT_NAME}
 	rclcpp
+	ament_index_cpp
 	ptera_msgs
 	behaviortree_cpp
 	Eigen3
 )
 
 install(TARGETS ${PROJECT_NAME} DESTINATION lib/${PROJECT_NAME})
+install(DIRECTORY trees/ DESTINATION share/${PROJECT_NAME}/trees)
 ament_package()

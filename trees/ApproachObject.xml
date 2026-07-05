@@ -1,0 +1,9 @@
+<root BTCPP_format="4" main_tree_to_execute="ApproachObject">
+    <BehaviorTree ID="ApproachObject">
+        <Sequence>
+            <PlanObjectApproach object_id="{object_id}" goal_pose="{goal_pose}"/>
+            <SendVehicleWaypoint goal_pose="{goal_pose}"/>
+            <PollVehicleArrival/>
+        </Sequence>
+    </BehaviorTree>
+</root>
